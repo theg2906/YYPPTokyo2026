@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>YYPPTravel Plan</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+</head>
+
+<body>
+    <header class="app-header">
+        <h1>YYPP Travel Plan - Tokyo 2026</h1>
+        <div class="header-controls">
+            <button id="toggle-rain-backup" class="icon-btn" aria-label="Toggle Rain Backup">
+                <span class="material-icons-round">umbrella</span>
+            </button>
+            <button id="add-event-btn" class="icon-btn" aria-label="Add Event">
+                <span class="material-icons-round">add</span>
+            </button>
+        </div>
+    </header>
+
+    <nav class="day-selector">
+        <!-- populated by JS -->
+    </nav>
+
+    <main id="itinerary-container" class="timeline-container">
+        <!-- populated by JS -->
+    </main>
+
+    <!-- Modal for Adding/Editing Events -->
+    <div id="event-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modal-title">Edit Component</h2>
+                <button id="close-modal" class="close-btn">&times;</button>
+            </div>
+            <form id="event-form">
+                <input type="hidden" id="event-id">
+
+                <div class="form-group">
+                    <label>Type</label>
+                    <div class="type-selector">
+                        <label><input type="radio" name="type" value="main" checked> Main</label>
+                        <label><input type="radio" name="type" value="rain_backup"> Rain</label>
+                        <label><input type="radio" name="type" value="meal"> Meal</label>
+                        <label><input type="radio" name="type" value="transport"> Move</label>
+                        <label><input type="radio" name="type" value="accommodation"> Hotel</label>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date</label>
+                        <input type="date" id="event-date" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Start</label>
+                        <input type="time" id="event-start" required>
+                    </div>
+                    <div class="form-group">
+                        <label>End</label>
+                        <input type="time" id="event-end" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Name (ZH)</label>
+                    <input type="text" id="event-name-zh" required>
+                </div>
+                <div class="form-group">
+                    <label>Name (JP)</label>
+                    <input type="text" id="event-name-jp">
+                </div>
+
+                <div class="form-group">
+                    <label>Location Link (Google Maps)</label>
+                    <input type="url" id="event-gmaps-uri">
+                </div>
+
+                <div class="form-group">
+                    <label>Address (JP)</label>
+                    <input type="text" id="event-address-jp">
+                </div>
+
+                <div class="form-group">
+                    <label>Next Route URL</label>
+                    <input type="url" id="event-route-url" placeholder="URL to next stop">
+                </div>
+
+                <div class="form-group">
+                    <label>Reservation Info (Booking ID/Time)</label>
+                    <input type="text" id="event-booking">
+                </div>
+
+                <div class="form-group">
+                    <label>Phone Number</label>
+                    <input type="tel" id="event-phone" placeholder="e.g. +81-3-1234-5678">
+                </div>
+
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="event-notes" rows="3"></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="delete-btn" class="btn btn-danger hidden">Delete</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Data (Loaded Date by Date) -->
+    <script src="data/2026-04-04.js"></script>
+    <script src="data/2026-04-05.js"></script>
+    <script src="data/2026-04-06.js"></script>
+    <script src="data/2026-04-07.js"></script>
+    <script src="data/2026-04-08.js"></script>
+    <script src="data/2026-04-09.js"></script>
+    <script src="data/2026-04-10.js"></script>
+    <script src="data/2026-04-11.js"></script>
+    <script src="data/2026-04-12.js"></script>
+
+    <!-- Main Logic -->
+    <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js');
+        }
+    </script>
+</body>
+
+</html>

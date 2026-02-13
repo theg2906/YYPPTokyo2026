@@ -1,0 +1,20 @@
+{
+    "name": "Travel Plan",
+    "short_name": "Travel",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#ffffff",
+    "icons": [
+        {
+            "src": "https://via.placeholder.com/192.png?text=Travel",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "https://via.placeholder.com/512.png?text=Travel",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}

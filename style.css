@@ -1,0 +1,676 @@
+:root {
+    --primary-color: #2196f3;
+    --bg-color: #f5f5f7;
+    --card-bg: #ffffff;
+    --text-primary: #1d1d1f;
+    --text-secondary: #86868b;
+    --border-radius: 12px;
+    --spacing: 16px;
+
+    /* Category Colors */
+    --color-main: #2196f3;
+    --color-rain: #9e9e9e;
+    --color-meal: #ff9800;
+    --color-transport: #4caf50;
+    --color-hotel: #9c27b0;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    line-height: 1.5;
+    /* iOS Safe Area Padding */
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+    /* Smooth scrolling on iOS */
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Header */
+.app-header {
+    position: sticky;
+    top: 0;
+    background: rgba(255, 255, 255, 0.95);
+    /* iOS Glassmorphism Support */
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    padding: var(--spacing);
+    padding-top: calc(var(--spacing) + env(safe-area-inset-top));
+    /* Status bar support */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    z-index: 500;
+}
+
+.app-header h1 {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.header-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--primary-color);
+}
+
+/* Day Selector */
+.day-selector {
+    display: flex;
+    overflow-x: auto;
+    padding: var(--spacing);
+    gap: 12px;
+    background: var(--bg-color);
+    scrollbar-width: none;
+    position: sticky;
+    top: 60px;
+    z-index: 400;
+}
+
+.day-chip {
+    padding: 8px 16px;
+    background: #fff;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    color: var(--text-secondary);
+}
+
+.day-chip.active {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}
+
+/* Timeline Grid Layout */
+.timeline-container {
+    padding: var(--spacing);
+    position: relative;
+    display: grid;
+    /* Default Mobile: Simple Grid (Time + Content) */
+    grid-template-columns: 40px 1fr;
+    gap: 8px;
+    min-height: 2000px;
+    transition: all 0.3s ease;
+}
+
+.day-selector {
+    display: flex;
+    overflow-x: auto;
+    white-space: nowrap;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    -webkit-overflow-scrolling: touch;
+    position: sticky;
+    top: 60px;
+    /* Below app-header */
+    z-index: 500;
+}
+
+/* Force Scrollbar visibility on PC */
+.day-selector::-webkit-scrollbar {
+    height: 6px;
+    display: block;
+}
+
+.day-selector::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+
+/* Mobile Dropdown Styles */
+.dropdown-wrapper {
+    display: flex;
+    align-items: center;
+    background: #f5f5f7;
+    border-radius: 12px;
+    padding: 2px 12px;
+    width: 100%;
+    border: 1px solid #e0e0e0;
+}
+
+.dropdown-wrapper .material-icons-round {
+    font-size: 18px;
+    color: var(--primary-color);
+    margin-right: 8px;
+}
+
+.dropdown-wrapper select {
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 8px 0;
+    width: 100%;
+    outline: none;
+    color: #333;
+}
+
+/* Desktop Multi-Day View */
+.timeline-container.desktop-mode {
+    display: flex;
+    grid-template-columns: none;
+    overflow: auto;
+    /* Allow both X and Y scrolling on the main container */
+    height: calc(100vh - 110px);
+    /* Full height */
+    padding-top: 0;
+    background: #f0f0f2;
+    align-items: flex-start;
+    /* Do not stretch, let content decide height? No, stretch is better for background */
+}
+
+/* Force Scrollbar visibility for the whole timeline */
+.timeline-container.desktop-mode::-webkit-scrollbar {
+    height: 12px;
+    width: 12px;
+    /* Vertical scrollbar width */
+    display: block;
+}
+
+.timeline-container.desktop-mode::-webkit-scrollbar-corner {
+    background: #f0f0f2;
+}
+
+.timeline-container.desktop-mode::-webkit-scrollbar-thumb {
+    background: #bbb;
+    border-radius: 6px;
+    border: 3px solid #f0f0f2;
+}
+
+.day-column {
+    flex: 0 0 320px;
+    /* Fixed width for consistent grid */
+    border-right: 1px solid #ddd;
+    position: relative;
+    background: #fff;
+    min-height: 100%;
+    /* Ensure it fills container */
+    /* overflow-y: auto;  REMOVED: Unified scrolling */
+}
+
+/* Fix Time Axis Collision: Absolute positioning */
+.day-column .time-axis {
+    position: absolute;
+    top: 40px;
+    /* Below header */
+    left: 0;
+    width: 100%;
+    height: calc(24 * 60 * 2px);
+    /* 24 hours * 60 mins * 2px/min = Height of content */
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Indent Events to reveal Time Labels */
+.day-column .column-content-wrapper {
+    margin-left: 20px;
+    /* Shift events right */
+    width: calc(100% - 20px);
+    /* Reduce width to fit */
+}
+
+.day-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    /* Higher than events (10) and axis (0) */
+    background: var(--primary-color) !important;
+    color: white !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    height: 40px;
+    line-height: 40px;
+    padding: 0;
+    text-align: center;
+}
+
+.app-header {
+    z-index: 600;
+    /* Ensure header stays above sticky day headers */
+}
+
+/* Time Axis (Left) */
+.time-axis {
+    position: relative;
+    border-right: 1px solid #e0e0e0;
+    height: 100%;
+}
+
+.time-marker {
+    position: absolute;
+    width: 100%;
+    border-top: 1px solid #eee;
+    pointer-events: none;
+}
+
+.time-marker span {
+    position: absolute;
+    left: 4px;
+    /* Visible on the left */
+    top: -10px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #666;
+    background: rgba(255, 255, 255, 0.7);
+    /* Readable against events? No, events are offset */
+    padding-right: 2px;
+    z-index: 5;
+}
+
+/* Events Area (Right) */
+.events-area {
+    position: relative;
+    height: 100%;
+}
+
+.event-card {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-radius: 6px;
+    padding: 6px 10px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: all 0.2s ease-out;
+    z-index: 10;
+    cursor: pointer;
+    color: #fff;
+    /* White text for all filled cards */
+    display: flex;
+    flex-direction: column;
+}
+
+/* Filled Colors */
+/* Filled Colors */
+.event-card[data-type="main"] {
+    background: #42a5f5;
+    border: 1px solid #777;
+    border-left: 4px solid #1565c0;
+}
+
+.event-card[data-type="rain_backup"] {
+    background: #90a4ae;
+    border: 1px solid #777;
+    border-left: 4px solid #546e7a;
+}
+
+.event-card[data-type="meal"] {
+    background: #ffca28;
+    color: #333;
+    border: 1px solid #777;
+    border-left: 4px solid #f57f17;
+}
+
+/* Dark text for yellow */
+.event-card[data-type="transport"] {
+    background: #66bb6a;
+    border: 1px solid #777;
+    border-left: 4px solid #2e7d32;
+}
+
+.event-card[data-type="accommodation"] {
+    background: #ab47bc;
+    border: 1px solid #777;
+    border-left: 4px solid #6a1b9a;
+}
+
+/* Expanded Inline: Show details but respect original layout */
+.day-column .column-content-wrapper {
+    margin-left: 20px;
+    width: calc(100% - 20px);
+    /* Fix Alignment: Push events down to match Time Axis start */
+    margin-top: 40px;
+}
+
+/* Alternate Shade: Darker background using gradient overlay (affects bg only, not text) */
+.event-card.alternate-shade {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.15));
+    /* brightness filter removed to protect text color */
+    filter: none;
+}
+
+/* ... Unified Card Header ... */
+
+/* Short View Specifics */
+.event-card.short .time-range {
+    display: none;
+}
+
+/* Show time range when expanded, even if short */
+.event-card.short.expanded .time-range {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.event-card.short .card-header {
+    margin-top: 0;
+}
+
+.event-card[data-type="meal"] .duration-badge-inline {
+    color: rgba(0, 0, 0, 0.8);
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.event-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+    padding-right: 24px;
+    /* Space for absolute icon */
+}
+
+/* Icons always visible, pinned to top-right */
+.type-icon {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.9);
+    position: absolute;
+    top: 8px;
+    right: 8px;
+}
+
+/* Adjust icon position for short cards if needed */
+.event-card.short .type-icon {
+    top: 4px;
+    /* Slightly tighter for short cards */
+    right: 6px;
+}
+
+.event-card[data-type="meal"] .type-icon {
+    color: rgba(0, 0, 0, 0.7);
+}
+
+/* Time Range (Normal View Only) */
+.time-range {
+    font-size: 0.8rem;
+    opacity: 0.9;
+    margin-top: 2px;
+}
+
+/* Short View Specifics */
+.event-card.short .time-range {
+    display: none;
+}
+
+.event-card.short .card-header {
+    margin-top: 0;
+}
+
+.event-card.short {
+    padding: 0 8px;
+    /* Compact padding */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border-left-width: 0;
+}
+
+.event-card.short .primary-info {
+    gap: 4px;
+}
+
+/* Removed .event-card.short .event-title and .type-icon overrides to match normal size */
+.event-card.short .primary-info {
+    gap: 4px;
+}
+
+/* Expanded View Restoration */
+.event-card.expanded {
+    height: auto !important;
+    /* Allow growing if needed */
+    z-index: 100 !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.25);
+    padding: 16px;
+    /* Determine min-height dynamically in JS or set reasonable default */
+}
+
+.event-card.expanded .event-title {
+    font-size: 1.1rem;
+    white-space: normal;
+    /* Allow wrap */
+}
+
+.event-card.expanded .sub-name {
+    font-size: 0.9rem;
+    opacity: 0.8;
+    margin-bottom: 8px;
+}
+
+/* Info Rows in Expanded */
+.expanded-details {
+    display: none;
+}
+
+.event-card.expanded .expanded-details {
+    display: block;
+}
+
+.info-row {
+    background: rgba(255, 255, 255, 0.15);
+    color: inherit;
+    border-radius: 6px;
+    padding: 8px;
+    margin-bottom: 8px;
+    display: flex;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.info-row.warning {
+    background: rgba(255, 255, 255, 0.9);
+    color: #e65100;
+}
+
+.event-card[data-type="meal"] .info-row.warning {
+    background: rgba(0, 0, 0, 0.05);
+    color: #bf360c;
+}
+
+/* Buttons in Expanded */
+.card-actions {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+    border: none;
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    text-decoration: none;
+}
+
+.event-card[data-type="meal"] .action-btn {
+    color: #333;
+}
+
+/* Modal & Form */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    /* High z-index */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 16px;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.modal.hidden {
+    pointer-events: none;
+    opacity: 0;
+    display: flex;
+    /* Keep flex layout for centering, just hide opacity */
+}
+
+/* Ensure modal content is scrollable if tall */
+.modal-content {
+    background: #fff;
+    width: 100%;
+    max-width: 400px;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    z-index: 2001;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-header h2 {
+    font-size: 1.25rem;
+    margin: 0;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+    padding: 4px;
+}
+
+/* Form Styles */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    background: #f9f9f9;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background: #fff;
+}
+
+.form-row {
+    display: flex;
+    gap: 12px;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.type-selector {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.type-selector label {
+    flex: 1;
+    text-align: center;
+    background: #f0f0f0;
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    color: #333;
+    border: 1px solid transparent;
+}
+
+.type-selector input {
+    display: none;
+}
+
+.type-selector input:checked+label {
+    /* Existing logic */
+}
+
+/* Better Type Selector Styling */
+.type-selector label:has(input:checked) {
+    background: var(--primary-color);
+    color: white;
+    font-weight: 600;
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-danger {
+    background: #ff5252;
+    color: white;
+}
+
+.hidden {
+    display: none !important;
+}
