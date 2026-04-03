@@ -9,10 +9,9 @@ try {
     console.error('Error parsing localStorage', e);
 }
 
-// 2. Direct Sync from Data Files (Source of Truth)
-// This ensures that if you delete an item from the JS file, it disappears from the app.
-if (window.initialItineraryData && Array.isArray(window.initialItineraryData)) {
-    // Overwrite with file data
+// 2. Seed from static files only on first load (localStorage empty)
+// localStorage is the source of truth once populated; static files are initial seed only.
+if (itinerary.length === 0 && window.initialItineraryData && Array.isArray(window.initialItineraryData)) {
     itinerary = [...window.initialItineraryData];
 
     // Final Sort by date + start time
@@ -21,7 +20,7 @@ if (window.initialItineraryData && Array.isArray(window.initialItineraryData)) {
         return a.time.start.localeCompare(b.time.start);
     });
 
-    // Update LocalStorage to match source code
+    // Write initial data to localStorage
     localStorage.setItem('travel_itinerary', JSON.stringify(itinerary));
 }
 
@@ -36,6 +35,7 @@ if (itinerary.length === 0) {
 }
 let currentDate = null;
 let showRainBackup = false;
+let dragRevertData = null;
 
 // DOM Elements
 const container = document.getElementById('itinerary-container');
@@ -241,6 +241,36 @@ function renderTimeAxis(targetContainer) {
     targetContainer.appendChild(timeAxis);
 }
 
+// Helper: Assign overlap columns for concurrent events
+// Returns Map<id, { col: number, totalCols: number }>
+function assignOverlapColumns(events) {
+    const sorted = [...events].sort((a, b) => a.time.start.localeCompare(b.time.start));
+    const colEnds = []; // colEnds[i] = end time of last event placed in column i
+    const colAssign = new Map(); // id -> col index
+
+    for (const ev of sorted) {
+        let col = colEnds.findIndex(end => end <= ev.time.start);
+        if (col === -1) col = colEnds.length;
+        colEnds[col] = ev.time.end;
+        colAssign.set(ev.id, col);
+    }
+
+    const result = new Map();
+    for (const ev of sorted) {
+        const col = colAssign.get(ev.id);
+        let totalCols = 1;
+        for (const other of sorted) {
+            if (other.id === ev.id) continue;
+            if (other.time.start < ev.time.end && other.time.end > ev.time.start) {
+                totalCols = Math.max(totalCols, colAssign.get(other.id) + 1);
+            }
+        }
+        totalCols = Math.max(totalCols, col + 1);
+        result.set(ev.id, { col, totalCols });
+    }
+    return result;
+}
+
 // Helper: Render Events for a Date
 function renderDayEvents(date, targetContainer) {
     // Filter by date & rain backup
@@ -248,6 +278,8 @@ function renderDayEvents(date, targetContainer) {
     if (!showRainBackup) {
         dayEvents = dayEvents.filter(item => item.type !== 'rain_backup');
     }
+
+    const overlapMap = assignOverlapColumns(dayEvents);
 
     // Track for alternating colors
     let lastType = null;
@@ -278,6 +310,9 @@ function renderDayEvents(date, targetContainer) {
         card.style.top = `${top}px`;
         // Ensure height matches visual representation
         card.style.height = `${Math.max(height, 30)}px`;
+        const { col, totalCols } = overlapMap.get(item.id) || { col: 0, totalCols: 1 };
+        card.style.width = `${100 / totalCols}%`;
+        card.style.left = `${col * 100 / totalCols}%`;
 
         // Pre-calc details
         let durationStr = '';
@@ -303,7 +338,7 @@ function renderDayEvents(date, targetContainer) {
         const editBtn = `<button class="action-btn" onclick="window.openEditModal('${item.id}'); event.stopPropagation();"><span class="material-icons-round">edit</span> Edit</button>`;
 
         const typeIcon = getTypeIcon(item.type);
-        const displayName = item.name.jp || item.name.zh;
+        const displayName = item.name.zh || item.name.jp;
 
         card.innerHTML = `
             <div class="card-content-wrapper">
@@ -322,7 +357,7 @@ function renderDayEvents(date, targetContainer) {
                      <div class="time-range">${item.time.start} - ${item.time.end}</div>
 
                     <div class="expanded-details">
-                         ${item.name.zh !== displayName ? `<div class="sub-name">${item.name.zh}</div>` : ''}
+                         ${item.name.jp && item.name.jp !== displayName ? `<div class="sub-name">${item.name.jp}</div>` : ''}
 
                         ${item.contact?.phone ? `
                         <div class="info-row">
@@ -358,8 +393,11 @@ function renderDayEvents(date, targetContainer) {
         `;
         targetContainer.appendChild(card);
 
+        let wasDragged = false;
+
         // Card Click Logic: Toggle Expansion (Simple)
         card.onclick = (e) => {
+            if (wasDragged) { wasDragged = false; return; }
             // Prevent triggering when clicking buttons/links
             if (e.target.closest('a') || e.target.closest('button')) return;
 
@@ -374,7 +412,94 @@ function renderDayEvents(date, targetContainer) {
             }
         };
 
+        initDragHandlers(card, item, () => { wasDragged = true; });
+
     });
+}
+
+function initDragHandlers(card, item, onDragCommit) {
+    const TOUCH_MOVE = 'touchmove';
+    let dragState = null;
+
+    function getClient(e) {
+        const src = e.touches ? e.touches[0] : e;
+        return { clientX: src.clientX, clientY: src.clientY };
+    }
+
+    function onDragStart(e) {
+        if (e.target.closest('a') || e.target.closest('button')) return;
+        e.stopPropagation();
+        const { clientX, clientY } = getClient(e);
+        const duration = getMinutesFromStart(item.time.end) - getMinutesFromStart(item.time.start);
+        dragState = {
+            startY: clientY, startX: clientX,
+            origTop: parseFloat(card.style.top),
+            duration, moved: false
+        };
+        card.classList.add('dragging');
+        document.addEventListener('mousemove', onDragMove);
+        document.addEventListener('mouseup', onDragEnd);
+        document.addEventListener(TOUCH_MOVE, onDragMove, { passive: false });
+        document.addEventListener('touchend', onDragEnd);
+    }
+
+    function onDragMove(e) {
+        if (!dragState) return;
+        e.preventDefault();
+        const { clientX, clientY } = getClient(e);
+        const deltaY = clientY - dragState.startY;
+        const deltaX = clientX - dragState.startX;
+        if (Math.abs(deltaY) > 5 || Math.abs(deltaX) > 5) dragState.moved = true;
+        const snapMins = Math.round(deltaY / PIXELS_PER_MIN / 15) * 15;
+        const newTop = Math.max(0, dragState.origTop + snapMins * PIXELS_PER_MIN);
+        card.style.top = `${newTop}px`;
+        dragState.lastClientX = clientX;
+        dragState.lastClientY = clientY;
+    }
+
+    function onDragEnd(e) {
+        if (!dragState) return;
+        document.removeEventListener('mousemove', onDragMove);
+        document.removeEventListener('mouseup', onDragEnd);
+        document.removeEventListener(TOUCH_MOVE, onDragMove);
+        document.removeEventListener('touchend', onDragEnd);
+        card.classList.remove('dragging');
+        if (!dragState.moved) { dragState = null; return; }
+
+        const pad = n => String(n).padStart(2, '0');
+        const rawMins = Math.round(parseFloat(card.style.top) / PIXELS_PER_MIN / 15) * 15 + START_HOUR * 60;
+        const newStartMins = Math.max(START_HOUR * 60, Math.min(23 * 60 - dragState.duration, rawMins));
+        const newEndMins = newStartMins + dragState.duration;
+        const newStart = `${pad(Math.floor(newStartMins / 60))}:${pad(newStartMins % 60)}`;
+        const newEnd = `${pad(Math.floor(newEndMins / 60))}:${pad(newEndMins % 60)}`;
+
+        let newDate = item.date;
+        const deltaX = (dragState.lastClientX || dragState.startX) - dragState.startX;
+        if (isDesktop && Math.abs(deltaX) > 40) {
+            const cols = [...document.querySelectorAll('.day-column')];
+            const dates = getUniqueDates();
+            const xCol = cols.findIndex(c => {
+                const r = c.getBoundingClientRect();
+                return (dragState.lastClientX || dragState.startX) >= r.left && (dragState.lastClientX || dragState.startX) < r.right;
+            });
+            if (xCol !== -1) newDate = dates[xCol];
+        }
+
+        dragRevertData = { id: item.id, origDate: item.date, origStart: item.time.start, origEnd: item.time.end };
+        const idx = itinerary.findIndex(i => i.id === item.id);
+        if (idx !== -1) {
+            itinerary[idx].time.start = newStart;
+            itinerary[idx].time.end = newEnd;
+            itinerary[idx].date = newDate;
+        }
+        onDragCommit();
+        renderView();
+        openEditModal(item.id);
+        dragState = null;
+    }
+
+    card.addEventListener('mousedown', onDragStart);
+    card.addEventListener('touchstart', onDragStart, { passive: false });
 }
 
 function getTypeIcon(type) {
@@ -426,6 +551,16 @@ function openEditModal(id = null) {
 }
 
 function closeEditModal() {
+    if (dragRevertData) {
+        const idx = itinerary.findIndex(i => i.id === dragRevertData.id);
+        if (idx !== -1) {
+            itinerary[idx].date = dragRevertData.origDate;
+            itinerary[idx].time.start = dragRevertData.origStart;
+            itinerary[idx].time.end = dragRevertData.origEnd;
+        }
+        dragRevertData = null;
+        renderView();
+    }
     modal.classList.add('hidden');
 }
 
@@ -495,6 +630,7 @@ function setupEventListeners() {
             itinerary.push(formData);
         }
 
+        dragRevertData = null;
         saveItinerary();
         closeEditModal();
     };

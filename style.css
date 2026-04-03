@@ -74,13 +74,16 @@ body {
 .day-selector {
     display: flex;
     overflow-x: auto;
-    padding: var(--spacing);
+    white-space: nowrap;
     gap: 12px;
-    background: var(--bg-color);
+    padding: 12px 16px;
+    background: #fff;
+    border-bottom: 1px solid #eee;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
     position: sticky;
     top: 60px;
-    z-index: 400;
+    z-index: 500;
 }
 
 .day-chip {
@@ -109,21 +112,6 @@ body {
     gap: 8px;
     min-height: 2000px;
     transition: all 0.3s ease;
-}
-
-.day-selector {
-    display: flex;
-    overflow-x: auto;
-    white-space: nowrap;
-    gap: 12px;
-    padding: 12px 16px;
-    background: #fff;
-    border-bottom: 1px solid #eee;
-    -webkit-overflow-scrolling: touch;
-    position: sticky;
-    top: 60px;
-    /* Below app-header */
-    z-index: 500;
 }
 
 /* Force Scrollbar visibility on PC */
@@ -285,18 +273,24 @@ body {
 .event-card {
     position: absolute;
     left: 0;
-    right: 0;
     border-radius: 6px;
     padding: 6px 10px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     transition: all 0.2s ease-out;
     z-index: 10;
-    cursor: pointer;
+    cursor: grab;
     color: #fff;
     /* White text for all filled cards */
     display: flex;
     flex-direction: column;
+}
+
+.event-card.dragging {
+    opacity: 0.85;
+    z-index: 200 !important;
+    transition: none !important;
+    cursor: grabbing;
 }
 
 /* Filled Colors */
@@ -408,15 +402,6 @@ body {
     margin-top: 2px;
 }
 
-/* Short View Specifics */
-.event-card.short .time-range {
-    display: none;
-}
-
-.event-card.short .card-header {
-    margin-top: 0;
-}
-
 .event-card.short {
     padding: 0 8px;
     /* Compact padding */
@@ -426,11 +411,6 @@ body {
     border-left-width: 0;
 }
 
-.event-card.short .primary-info {
-    gap: 4px;
-}
-
-/* Removed .event-card.short .event-title and .type-icon overrides to match normal size */
 .event-card.short .primary-info {
     gap: 4px;
 }
@@ -544,7 +524,7 @@ body {
 .modal-content {
     background: #fff;
     width: 100%;
-    max-width: 400px;
+    max-width: clamp(320px, 90vw, 520px);
     border-radius: 16px;
     padding: 20px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
